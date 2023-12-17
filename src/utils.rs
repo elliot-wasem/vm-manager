@@ -38,6 +38,7 @@ impl OutputStream {
         }
     }
     pub fn flush(&mut self) {
+        if self.buffer.is_empty() { return; }
         match self.stream {
             OutputStreamTarget::Stdout => println!("{}", self.buffer),
         }
