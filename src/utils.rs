@@ -1,5 +1,6 @@
+use crate::config::Config;
 use crate::qemu_runner::QemuRunner;
-use crate::{ImageLocation, BACKUP_IMAGES_DIRECTORY, IMAGES_DIRECTORY};
+use crate::{ImageLocation, IMAGES_DIRECTORY};
 use anyhow::Result;
 use std::cmp::max;
 use std::fs::read_dir;
@@ -38,7 +39,9 @@ impl OutputStream {
         }
     }
     pub fn flush(&mut self) {
-        if self.buffer.is_empty() { return; }
+        if self.buffer.is_empty() {
+            return;
+        }
         match self.stream {
             OutputStreamTarget::Stdout => println!("{}", self.buffer),
         }
@@ -64,20 +67,20 @@ pub fn run_shell_command(command: &[&str]) -> Result<Output, String> {
     }
 }
 
-pub fn get_list_of_images(image_location: ImageLocation) -> Vec<String> {
+pub fn get_list_of_images(image_location: ImageLocation, config: &Config) -> Vec<String> {
     //! Returns a vector of image names found in the given location.
     //!
     //! If the provided location is ImageLocation::WorkingImages, then
-    //! it will search the path ~/qemu-disks
+    //! it will search the path ~/.vm-manager/disk-images
     //!
     //! If the provided location is ImageLocation::BackupImages, then
-    //! it will search the path ~/qemu-disks/backups
-    let images_directory: &str = match image_location {
-        ImageLocation::WorkingImages => IMAGES_DIRECTORY,
-        ImageLocation::BackupImages => BACKUP_IMAGES_DIRECTORY,
+    //! it will search the path ~/.vm-manager/disk-images/backups
+    let images_directory: String = match image_location {
+        ImageLocation::WorkingImages => config.get_images_directory(),
+        ImageLocation::BackupImages => config.get_backup_images_directory(),
     };
 
-    match read_dir(shellexpand::tilde(images_directory).to_string()) {
+    match read_dir(shellexpand::tilde(&images_directory).to_string()) {
         Err(e) => {
             eprintln!("{e}");
             vec![]
@@ -112,7 +115,7 @@ pub fn get_list_of_images(image_location: ImageLocation) -> Vec<String> {
     }
 }
 
-pub fn get_list_of_running_vms() -> Vec<QemuRunner> {
+pub fn get_list_of_running_vms(config: &Config) -> Vec<QemuRunner> {
     let output: String = match run_shell_command(&["ps", "ax"]) {
         Ok(output) => match String::from_utf8(output.stdout) {
             Ok(stdout) => stdout,
@@ -167,6 +170,7 @@ pub fn get_list_of_running_vms() -> Vec<QemuRunner> {
             https_port.as_str().parse::<usize>().unwrap(),
             &filename,
             Some(pid),
+            config,
         );
         result.push(running_vm_entry);
     }
@@ -213,10 +217,10 @@ pub fn print_running_vm_table(running_vms: &[QemuRunner], output_buffer: &mut Ou
     }
 }
 
-pub fn get_file_from_image_name(image_name: &str) -> Option<PathBuf> {
+pub fn get_file_from_image_name(image_name: &str, config: &Config) -> Option<PathBuf> {
     let mut num_found = 0;
     let mut real_image_name = String::new();
-    for full_image_name in get_list_of_images(ImageLocation::WorkingImages) {
+    for full_image_name in get_list_of_images(ImageLocation::WorkingImages, config) {
         if full_image_name.contains(image_name) {
             real_image_name = full_image_name;
             num_found += 1;
@@ -235,4 +239,17 @@ pub fn get_file_from_image_name(image_name: &str) -> Option<PathBuf> {
     } else {
         Some(proposed_path.to_owned())
     }
+}
+pub fn is_port_in_use(port: usize) -> bool {
+    match run_shell_command(&["lsof", "-nP", &format!("-i:{port}")]) {
+        Ok(output) => output.status.success(),
+        Err(_) => true,
+    }
+}
+pub fn find_open_port(starting_port: usize) -> usize {
+    let mut selected_port: usize = starting_port;
+    while is_port_in_use(selected_port) {
+        selected_port += 1;
+    }
+    selected_port
 }

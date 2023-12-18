@@ -16,19 +16,19 @@ pub enum Command {
 /// ---------------------------------------------------------------------------
 /// Installation process
 ///     1. Ensure qemu is installed.
-///     2. Create a directory '$HOME/qemu-disks'.
-///     3. Create another directory '$HOME/qemu-disks/backups'.
-///     4. Put .img files for active vms in '$HOME/qemu-disks'.
-///     5. Put backup .img files in '$HOME/qemu-disks/backups'.
+///     2. Create a directory '$HOME/.vm-manager/disk-images'.
+///     3. Create another directory '$HOME/.vm-manager/disk-images/backups'.
+///     4. Put .img files for active vms in '$HOME/.vm-manager/disk-images'.
+///     5. Put backup .img files in '$HOME/.vm-manager/disk-images/backups'.
 #[derive(Debug, Parser)]
 #[clap(name = "vm-manager", arg_required_else_help = true, verbatim_doc_comment)]
 pub struct Arguments {
     /// List backup images.
-    #[clap(long, short = 'b', default_value_t = false)]
+    #[clap(long, short = 'b')]
     pub list_backup_images: bool,
 
     /// Run in foreground. Default is to daemonize.
-    #[clap(long, short = 'f', default_value_t = false)]
+    #[clap(long, short = 'f')]
     pub foreground: bool,
 
     /// Specify the image file with which to start the container.
@@ -36,7 +36,7 @@ pub struct Arguments {
     pub image: Option<String>,
 
     /// List images
-    #[clap(long, short = 'l', default_value_t = false)]
+    #[clap(long, short = 'l')]
     pub list_images: bool,
 
     /// Specify host port to forward to container's port 22. If this is not
@@ -52,8 +52,12 @@ pub struct Arguments {
     pub https_port: Option<usize>,
 
     /// List running VMs.
-    #[clap(long, short = 'r', default_value_t = false)]
+    #[clap(long, short = 'r')]
     pub list_running_vms: bool,
+
+    /// Config file to use. Default is '$HOME/.vm-manager/config.yml'.
+    #[clap(long, short = 'c')]
+    pub config_file: Option<String>,
 
     #[command(subcommand)]
     pub command: Option<Command>,
