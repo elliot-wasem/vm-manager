@@ -1,6 +1,7 @@
 mod parse_args;
 mod qemu_runner;
 mod utils;
+mod config;
 
 use crate::{
     qemu_runner::QemuRunner,
