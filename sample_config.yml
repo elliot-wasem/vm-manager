@@ -1,0 +1,209 @@
+####### global_qemu_options #######
+# base_images_directory:
+#     The base directory to use for image files. Defaults to
+#     '~/.vm-manager/disk-images' if not present in the config file.
+#     Please either use a full/relative path. Can use ~ as part of
+#     the path. Do not use environment variables like '$HOME'.
+# global_qemu_options:
+#     A place to set default options to use for all VM configs which don't
+#     specify otherwise using 'use_global_options: false'.
+#
+# An example of global_qemu_options:
+# ```
+# global_qemu_options:
+#   - option: -m 8G
+#   - option: -daemonize
+#   - option: -smp 4
+#   - option: -accel kvm
+#   - option: -accel tcg
+#   - option: -cpu host
+#   - option: -nic user,model=virtio
+# ```
+#
+# An example of zero (0) global_qemu_options:
+# ```
+# global_qemu_options:
+# ```
+#
+####### vms ######
+# vms:
+#     A list of vm configurations.
+#
+# Each vm configuration listed should look like the following (indented by 2
+# spaces):
+# ```
+#   - image_name: isopyre-2.7
+#     port_mappings:
+#     - host_port: '5555'
+#       vm_port: '22'
+#       explicit: false
+#     - host_port: '8081'
+#       vm_port: '443'
+#       explicit: false
+#     options:
+#     use_global_options: true
+#     daemonize: true
+# ```
+###### VM configuration #####
+# The following options apply to each configuration:
+#   image_name: some_image_name
+#   port_mappings:
+#   - host_port: 'some unused port on the host'
+#     vm_port: 'some port on the vm'
+#     explicit: true|false
+#   options:
+#   - option: -some option
+#   use_global_options: true|false
+#   daemonize: true|false
+#
+# A description of each vm configuration option can be found here:
+#
+### image_name: some_image_name
+#     some_image_name: an image name as shown in the output `$ vm-manager -l`.
+#
+### port_mappings: a list of port mappings. Each port mapping will look
+#                  something like the following, and must include each field
+#                  exactly once:
+# ```
+#     - host_port: '12345'
+#       vm_port: '54321'
+#       explicit: true
+# ```
+##### explicit: The `explicit` option in each port mapping specifies whether
+#               (true) or not (false) the following behavior is observed:
+#   true:  if the given host port is not available, the program will exit with
+#          an error message.
+#   false: if the given host port is not available, the program will find the
+#          next available port greater than the given host_port.
+#
+### options: a list of options to pass to qemu. The list will look something
+#            like the following, and can include zero or more options:
+# ```
+#     - option: -m 8G
+#     - option: -daemonize
+# ```
+#   If `- option: -nic ...` is specified, it will automatically override any
+#   global `-nic` options.
+#
+#   If no `- option: -nic ...` is specified, either the global `-nic` option
+#   will be used, or in the absence of one, one will be added IF and ONLY if
+#   there is at least one port mapping.
+#
+#   If any port mappings are given, they will be added to whatever `-nic`
+#   option is used. As such, the following three are equivalent:
+# 1.
+# ```
+#     port_mappings:
+#     - host_port: '12345'
+#       vm_port: '54321'
+#       explicit: false
+#     - host_port: '88888'
+#       vm_port: '11111'
+#       explicit: false
+#     options:
+# ```
+# 2.
+# ```
+#     port_mappings:
+#     - host_port: '88888'
+#       vm_port: '11111'
+#       explicit: false
+#     options:
+#     - option: -nic hostfwd=tcp::12345-:54321
+# ```
+# 3.
+# ```
+#     port_mappings:
+#     options:
+#     - option: -nic hostfwd=tcp::12345-:54321,hostfwd=tcp::88888-:77777
+# ```
+#
+### use_global_options: a boolean option specifying whether or not the options
+#                       define in `global_qemu_options` are used for this VM.
+#                       In the case that both `global_qemu_options` and the VM
+#                       config specify `-nic`, the option specified in the VM
+#                       config override the global options.
+#
+### daemonize: a boolean specifying whether or not the VM should be run in
+#            foreground (false) or background (true) mode.
+#
+###### EXAMPLE CONFIGURATION #####
+# base_images_directory: ~/my_images
+# global_qemu_options:
+#   - option: -m 8G
+#   - option: -daemonize
+#   - option: -smp 4
+#   - option: -accel kvm
+#   - option: -accel tcg
+#   - option: -cpu host
+#   - option: -nic user,model=virtio
+# vms:
+#   - image_name: isopyre-2.7
+#     port_mappings:
+#     - host_port: '5555'
+#       vm_port: '22'
+#       explicit: false
+#     - host_port: '8081'
+#       vm_port: '443'
+#       explicit: false
+#     options:
+#     use_global_options: true
+#     daemonize: true
+#   - image_name: halite-2.6
+#     port_mappings:
+#     - host_port: '5555'
+#       vm_port: '22'
+#       explicit: false
+#     - host_port: '8081'
+#       vm_port: '443'
+#       explicit: false
+#     options:
+#     use_global_options: false
+#     daemonize: true
+
+base_images_directory: ~/.vm-manager/disk-images
+global_qemu_options:
+  - option: -m 8G
+  - option: -daemonize
+  - option: -smp 4
+  - option: -accel kvm
+  - option: -accel tcg
+  - option: -cpu host
+  # '-vnc none' necessary for headless mode
+  # '-vnc :0' works too if you only want to run a single VM
+  - option: -vnc none
+  - option: -nic user,model=virtio
+vms:
+  - image_name: isopyre-2.7
+    port_mappings:
+    - host_port: '5555'
+      vm_port: '22'
+      explicit: false
+    - host_port: '8081'
+      vm_port: '443'
+      explicit: false
+    options:
+    use_global_options: true
+    daemonize: true
+  - image_name: halite-2.6
+    port_mappings:
+    - host_port: '5555'
+      vm_port: '22'
+      explicit: false
+    - host_port: '8081'
+      vm_port: '443'
+      explicit: false
+    options:
+    use_global_options: true
+    daemonize: true
+  - image_name: emerald-2.5
+    port_mappings:
+    - host_port: '5555'
+      vm_port: '22'
+      explicit: false
+    - host_port: '8081'
+      vm_port: '443'
+      explicit: false
+    options:
+    use_global_options: true
+    daemonize: true
