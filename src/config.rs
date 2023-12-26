@@ -4,6 +4,14 @@ use std::fs;
 use crate::{IMAGES_DIRECTORY, utils::find_open_port};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+/// Used for storing a deserialized configuration.
+/// # Attributes:
+/// * base_images_directory - An `Option<String>` representing an image storage
+///     directory. If `None`, uses `~/.vm-manager/disk-images` instead.
+/// * global_qemu_options - A `Vec<QemuRunOption>` representing all qemu
+///     options put in the `global_qemu_options` section.
+/// * vms - A `Vec<VMConfig>` which holds the configuration options for
+///     individual VMs.
 pub struct Config {
     base_images_directory: Option<String>,
     global_qemu_options: Vec<QemuRunOption>,
@@ -68,6 +76,9 @@ impl Config {
     }
 
     pub fn get_images_directory(&self) -> String {
+        //! Returns the specified images directory if
+        //! `self.base_images_directory` is not `None`. If it IS `None`, then
+        //! the directory `~/.vm-manager/disk-images` is used instead.
         if let Some(directory) = &self.base_images_directory {
             directory.to_owned()
         } else {
@@ -76,10 +87,18 @@ impl Config {
     }
 
     pub fn get_backup_images_directory(&self) -> String {
+        //! Returns the specified backup images directory if
+        //! `self.base_images_directory` is not `None`. This is located at
+        //! `format!("{}/backup", self.get_images_directory())`. If it IS
+        //! `None`, then the directory `~/.vm-manager/disk-images/backups` is
+        //! used instead.
         format!("{}/backups", self.get_images_directory())
     }
 
     pub fn get_vm_config_with_image_name(&self, image_name: &str) -> Option<&VMConfig> {
+        //! Searches through the list of VMs in `self.vms`, and returns either
+        //! Some(vm) if the VM's image name contains the specified
+        //! `image_name`, and `None` otherwise.
         self.vms.iter().find(|vm| vm.image_name().contains(image_name))
     }
 }
@@ -102,6 +121,7 @@ pub struct VMConfig {
 
 impl VMConfig {
     pub fn option_nic_present(&self) -> bool {
+        //! Returns `true` if there is an option `-nic ...` present, and false otherwise.
         for option in &self.options {
             if option.option.starts_with("-nic") {
                 return true;
@@ -111,6 +131,9 @@ impl VMConfig {
     }
 
     pub fn add_qemu_option(&mut self, option: &QemuRunOption) {
+        //! Adds an option to the list of qemu options. Takes special care to avoid duplicate `-nic
+        //! ...` options, and instead combines them.
+
         // we only want one `-nic` option, and the default behavior
         // is to overwrite when requesting to add one.
         //
@@ -154,7 +177,7 @@ impl VMConfig {
 pub struct PortMapping {
     /// Host port to be used.
     host_port: String,
-    // VM port to which to bind
+    /// VM port to which to bind
     vm_port: String,
     /// Whether or not the exact specified host port should be used.
     /// If 'true', then if that port is in use, the program
@@ -199,6 +222,8 @@ impl PortMapping {
 
 /// A struct to hold one or more related qemu run options.
 ///
+/// These will be something like `-m 8G`, `-daemonize`, etc.
+///
 /// # Attributes:
 /// * option - String representing the provided option(s).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
@@ -226,10 +251,6 @@ impl QemuRunOption {
     pub fn as_str(&self) -> &str {
         //! Returns a `str` reference of the internal `option` attribute.
         &self.option
-    }
-    pub fn _to_string(&self) -> String {
-        //! Returns a `String` copy of the internal `option` attribute.
-        self.option.clone()
     }
     #[allow(unused)]
     pub fn is_multi_opts(&self) -> bool {
@@ -321,13 +342,13 @@ mod tests {
             Err(e) => format!("Serialization failure: {e}"),
         };
 
-        let expected_string: String = String::from("image_name: some-image-name\nport_mappings:\n- host_port: '5555'\n  vm_port: '22'\n  explicit: false\n- host_port: '8081'\n  vm_port: '443'\n  explicit: true\noptions:\n- option: -m 8G\n- option: -daemonize\ndaemonize: false\n");
+        let expected_string: String = String::from("image_name: some-image-name\nport_mappings:\n- host_port: '5555'\n  vm_port: '22'\n  explicit: false\n- host_port: '8081'\n  vm_port: '443'\n  explicit: true\noptions:\n- option: -m 8G\n- option: -daemonize\nuse_global_options: true\ndaemonize: false\n");
 
         assert_eq!(serialized_config, expected_string);
     }
     #[test]
     fn test_deserialize_vm_config() {
-        let source_string: &str = "image_name: some-image-name\nport_mappings:\n- host_port: '5555'\n  vm_port: '22'\n  explicit: false\n- host_port: '8081'\n  vm_port: '443'\n  explicit: true\noptions:\n- option: -m 8G\n- option: -daemonize\ndaemonize: false";
+        let source_string: &str = "image_name: some-image-name\nport_mappings:\n- host_port: '5555'\n  vm_port: '22'\n  explicit: false\n- host_port: '8081'\n  vm_port: '443'\n  explicit: true\noptions:\n- option: -m 8G\n- option: -daemonize\nuse_global_options: true\ndaemonize: false";
 
         let deserialized_config: crate::config::VMConfig =
             match serde_yaml::from_str::<crate::config::VMConfig>(source_string) {
