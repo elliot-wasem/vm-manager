@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_yaml;
-use shellexpand;
 use std::fs;
 
 use crate::{IMAGES_DIRECTORY, utils::find_open_port};
@@ -29,7 +27,7 @@ impl Config {
             // push each option into the VM
             if vm.use_global_options {
                 for option in &config.global_qemu_options {
-                    vm.add_qemu_option(&option);
+                    vm.add_qemu_option(option);
                 }
             }
 
@@ -82,13 +80,7 @@ impl Config {
     }
 
     pub fn get_vm_config_with_image_name(&self, image_name: &str) -> Option<&VMConfig> {
-        for vm in &self.vms {
-            if vm.image_name.contains(image_name) {
-                return Some(&vm);
-            }
-        }
-
-        None
+        self.vms.iter().find(|vm| vm.image_name().contains(image_name))
     }
 }
 
@@ -172,6 +164,7 @@ pub struct PortMapping {
 }
 
 impl PortMapping {
+    #[allow(unused)]
     pub fn new(host_port: &str, vm_port: &str, explicit: bool) -> Self {
         Self {
             host_port: host_port.to_owned(),
@@ -180,11 +173,11 @@ impl PortMapping {
         }
     }
 
-    pub fn host_port(&self) -> &str {
+    pub fn _host_port(&self) -> &str {
         &self.host_port
     }
 
-    pub fn vm_port(&self) -> &str {
+    pub fn _vm_port(&self) -> &str {
         &self.vm_port
     }
 
@@ -234,10 +227,11 @@ impl QemuRunOption {
         //! Returns a `str` reference of the internal `option` attribute.
         &self.option
     }
-    pub fn to_string(&self) -> String {
+    pub fn _to_string(&self) -> String {
         //! Returns a `String` copy of the internal `option` attribute.
         self.option.clone()
     }
+    #[allow(unused)]
     pub fn is_multi_opts(&self) -> bool {
         //! Returns `true` if the given option string contains a space, and `false` otherwise.
         //!
@@ -257,7 +251,7 @@ impl QemuRunOption {
         //! let option: QemuRunOption = QemuRunOption::new("-m\t8G");
         //! assert!(option.is_multi_opts());
         //! ```
-        self.option.split(" ").count() > 1
+        self.option.split(' ').count() > 1
     }
     pub fn get_opt_list(&self) -> Vec<&str> {
         //! Vectorizes tab- or space-separated options
@@ -268,11 +262,12 @@ impl QemuRunOption {
         //! let option: QemuRunOption = QemuRunOption::new("-m 8G");
         //! assert_eq!(option.get_opt_list(), vec!["-m", "8G"]);
         //! ```
-        self.option.split(" ").collect::<Vec<&str>>()
+        self.option.split(' ').collect::<Vec<&str>>()
     }
 }
 
 mod tests {
+    #[allow(unused)]
     use crate::config::VMConfig;
 
     #[test]

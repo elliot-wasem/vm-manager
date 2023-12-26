@@ -19,6 +19,7 @@ use parse_args::Arguments;
 const DEFAULT_SSH_PORT: usize = 5555;
 const DEFAULT_HTTPS_PORT: usize = 8081;
 const IMAGES_DIRECTORY: &str = "~/.vm-manager/disk-images";
+#[allow(unused)]
 const BACKUP_IMAGES_DIRECTORY: &str = "~/.vm-manager/disk-images/backups";
 const CONFIG_FILE: &str = "~/.vm-manager/config.yml";
 
@@ -47,7 +48,7 @@ fn main() {
     if args.list_images {
         buffer.addln("--------------------\nImages\n--------------------");
         for file in get_list_of_images(ImageLocation::WorkingImages, &config) {
-            buffer.addln(&format!("{file}"));
+            buffer.addln(&file);
         }
     }
 
@@ -55,7 +56,7 @@ fn main() {
         buffer.add_spacer();
         buffer.addln("--------------------\nBackup Images\n--------------------");
         for file in get_list_of_images(ImageLocation::BackupImages, &config) {
-            buffer.addln(&format!("{file}"));
+            buffer.addln(&file);
         }
     }
 
