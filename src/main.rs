@@ -40,7 +40,13 @@ fn main() {
         CONFIG_FILE.to_owned()
     };
 
-    let config: Config = Config::load_from_file(&config_file);
+    let config: Config = match Config::load_from_file(&config_file) {
+        Ok(config) => config,
+        Err(e) => {
+            eprintln!("Failed to load config from file '{config_file}'. {e}");
+            std::process::exit(1);
+        }
+    };
 
     // used for collecting string output
     let mut buffer: OutputStream = OutputStream::new(OutputStreamTarget::Stdout);

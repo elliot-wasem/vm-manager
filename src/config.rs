@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::fs::{self, metadata};
 
-use crate::{IMAGES_DIRECTORY, utils::find_open_port};
+use crate::{utils::find_open_port, IMAGES_DIRECTORY};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 /// Used for storing a deserialized configuration.
@@ -19,10 +19,21 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load_from_file(filename: &str) -> Self {
+    pub fn load_from_file(filename: &str) -> Result<Self, std::io::Error> {
+        // get metadata of the file
+        let md = metadata(filename)?;
+
+        // check that it is indeed a file
+        if !md.is_file() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("'{filename}' is not a file."),
+            ));
+        }
+
         // read config file to string
         let config_file_contents: String =
-            fs::read_to_string(shellexpand::tilde(filename).to_string()).unwrap();
+            fs::read_to_string(shellexpand::tilde(filename).to_string())?;
 
         // deserialize file contents to structured data
         let mut config: Self = match serde_yaml::from_str::<Self>(&config_file_contents) {
@@ -72,7 +83,7 @@ impl Config {
             config.base_images_directory = Some(IMAGES_DIRECTORY.to_owned());
         }
 
-        config
+        Ok(config)
     }
 
     pub fn get_images_directory(&self) -> String {
@@ -99,7 +110,9 @@ impl Config {
         //! Searches through the list of VMs in `self.vms`, and returns either
         //! Some(vm) if the VM's image name contains the specified
         //! `image_name`, and `None` otherwise.
-        self.vms.iter().find(|vm| vm.image_name().contains(image_name))
+        self.vms
+            .iter()
+            .find(|vm| vm.image_name().contains(image_name))
     }
 }
 

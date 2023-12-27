@@ -20,6 +20,9 @@ pub enum Command {
 ///     3. Create another directory '$HOME/.vm-manager/disk-images/backups'.
 ///     4. Put .img files for active vms in '$HOME/.vm-manager/disk-images'.
 ///     5. Put backup .img files in '$HOME/.vm-manager/disk-images/backups'.
+///     6. Copy sample configuration into '$HOME/.vm-manager/config.yml', then configure as needed.
+///        You can copy to another place as well if you choose, and can pass that file to the
+///        program with the -c / --config-file flag.
 #[derive(Debug, Parser)]
 #[clap(name = "vm-manager", arg_required_else_help = true, verbatim_doc_comment)]
 pub struct Arguments {
