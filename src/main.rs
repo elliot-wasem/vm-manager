@@ -15,6 +15,7 @@ use anyhow::Result;
 use clap::Parser;
 use config::Config;
 use parse_args::Arguments;
+use tilde_expand;
 
 const DEFAULT_SSH_PORT: usize = 5555;
 const DEFAULT_HTTPS_PORT: usize = 8081;
@@ -37,7 +38,7 @@ fn main() {
     let config_file: String = if let Some(file) = args.config_file {
         file
     } else {
-        CONFIG_FILE.to_owned()
+        String::from_utf8(tilde_expand::tilde_expand(CONFIG_FILE.as_bytes())).unwrap()
     };
 
     let config: Config = match Config::load_from_file(&config_file) {

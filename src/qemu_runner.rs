@@ -119,8 +119,6 @@ format!("file={}", image_path.display())
                 }
             }
 
-            eprintln!("args: {args:#?}");
-
             run_shell_command(&args)?;
 
             Ok(())
